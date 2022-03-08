@@ -5,4 +5,5 @@ gcloud functions deploy PushObject \
 --entry-point PushObject.Function \
 --runtime=dotnet3 \
 --set-env-vars GCP_PROJECT=parlr-342110 \
+--retry \
 --allow-unauthenticated;

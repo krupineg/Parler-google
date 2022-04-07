@@ -13,9 +13,10 @@ namespace CreateSchema
 {
     public class Function : IHttpFunction
     {
-        private readonly TableSchema _schema;
+        private readonly TableSchema _schemaVerbs;
         private readonly ILogger<Function> _logger;
-        private readonly Google.Cloud.BigQuery.V2.BigQueryClient _client;
+        private readonly BigQueryClient _client;
+        private readonly TableSchema _schemaConjugations;
 
         public Function(ILogger<Function> logger) {
             _logger = logger;
@@ -23,7 +24,7 @@ namespace CreateSchema
             _logger.LogInformation(projectId);
             _client = Google.Cloud.BigQuery.V2.BigQueryClient.Create(projectId);
              _logger.LogDebug($"Prepare schema");
-            _schema = new TableSchemaBuilder 
+            _schemaVerbs = new TableSchemaBuilder 
             {
                 new TableFieldSchema() { Name = "Infinitive", Type="STRING"},
                 new TableFieldSchema() { Name = "Id", Type="STRING"},
@@ -41,6 +42,19 @@ namespace CreateSchema
                     }
                 }
             }.Build();
+            _schemaConjugations = new TableSchemaBuilder 
+            {
+                new TableFieldSchema() { Name = "Infinitive", Type="STRING"},
+                new TableFieldSchema() { Name = "Id", Type="STRING"},
+                new TableFieldSchema() { Name = "VerbIndex", Type="INTEGER"},
+                new TableFieldSchema() { Name = "ConjugationIndex", Type="INTEGER"},
+                new TableFieldSchema() { Name = "Time", Type="STRING"},
+                new TableFieldSchema() { Name = "Male", Type="STRING"},
+                new TableFieldSchema() { Name = "Female", Type="STRING"},
+                new TableFieldSchema() { Name = "Combined", Type="STRING"},
+                new TableFieldSchema() { Name = "Party", Type="INTEGER"},
+                new TableFieldSchema() { Name = "Value", Type="STRING"},
+            }.Build();
         }
 
         /// <summary>
@@ -55,14 +69,19 @@ namespace CreateSchema
                 var dataset = _client.GetOrCreateDataset("verbs_dataset");
 
                 if(context.Request.Query.ContainsKey("drop")) {
-                    _logger.LogDebug($"Drop existing table if exists");
+                    _logger.LogDebug($"Drop existing tables if exists");
                     await _client.DeleteTableAsync("verbs_dataset", "verbs_table").ConfigureAwait(false);   
+                    await _client.DeleteTableAsync("verbs_dataset", "conjugation_flat").ConfigureAwait(false);   
                 }                
 
                  _logger.LogDebug($"Creating table verbs_table");
-                await dataset.CreateTableAsync("verbs_table", _schema).ConfigureAwait(false);   
+                await dataset.CreateTableAsync("verbs_table", _schemaVerbs).ConfigureAwait(false);   
             
-                _logger.LogInformation($"Schema was craeted successfully");
+                
+                _logger.LogDebug($"Creating table conjugation_flat");
+                await dataset.CreateTableAsync("verbs_table", _schemaVerbs).ConfigureAwait(false);   
+                
+                _logger.LogInformation($"Schema was created successfully");
                 await context.Response.WriteAsync(JsonSerializer.Serialize(new { Success = true}));
             }
             catch(Exception ex) {

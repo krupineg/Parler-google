@@ -85,7 +85,7 @@ namespace CreateSchema
                 await context.Response.WriteAsync(JsonSerializer.Serialize(new { Success = true}));
             }
             catch(Exception ex) {
-                _logger.LogError("Unable to craete schema", ex);
+                _logger.LogError(ex, "Unable to craete schema");
                 context.Response.StatusCode = (int) HttpStatusCode.BadRequest;
             } 
         }

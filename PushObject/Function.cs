@@ -21,14 +21,14 @@ namespace PushObject
     public class Function : ICloudEventFunction<StorageObjectData>
     {
         private readonly ILogger<Function> _logger;
-        private readonly Google.Cloud.BigQuery.V2.BigQueryClient _client;        
+        private readonly BigQueryClient _client;        
         private readonly CreateLoadJobOptions _jobOptions;
 
         public Function(ILogger<Function> logger) {
             _logger = logger;
             var projectId = System.Environment.GetEnvironmentVariable("GCP_PROJECT"); //"parlr-342110"
              _logger.LogInformation($"Project id : {projectId}");
-            _client = Google.Cloud.BigQuery.V2.BigQueryClient.Create(projectId);
+            _client = BigQueryClient.Create(projectId);
             _jobOptions = new CreateLoadJobOptions
             {
                 SourceFormat = FileFormat.NewlineDelimitedJson,

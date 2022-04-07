@@ -70,12 +70,12 @@ namespace CreateSchema
 
                 if(context.Request.Query.ContainsKey("drop")) {
                     _logger.LogDebug($"Drop existing tables if exists");
-                    await _client.DeleteTableAsync("verbs_dataset", "verbs_table").ConfigureAwait(false);   
+                    //await _client.DeleteTableAsync("verbs_dataset", "verbs_table").ConfigureAwait(false);   
                     await _client.DeleteTableAsync("verbs_dataset", "conjugation_flat").ConfigureAwait(false);   
                 }                
 
-                 _logger.LogDebug($"Creating table verbs_table");
-                await dataset.CreateTableAsync("verbs_table", _schemaVerbs).ConfigureAwait(false);   
+                 _logger.LogDebug($"Creating table verbs_table (ignored)");
+                // await dataset.CreateTableAsync("verbs_table", _schemaVerbs).ConfigureAwait(false);   
             
                 
                 _logger.LogDebug($"Creating table conjugation_flat");

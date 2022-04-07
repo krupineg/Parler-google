@@ -79,13 +79,13 @@ namespace CreateSchema
             
                 
                 _logger.LogDebug($"Creating table conjugation_flat");
-                await dataset.CreateTableAsync("verbs_table", _schemaVerbs).ConfigureAwait(false);   
+                await dataset.CreateTableAsync("conjugation_flat", _schemaConjugations).ConfigureAwait(false);   
                 
                 _logger.LogInformation($"Schema was created successfully");
                 await context.Response.WriteAsync(JsonSerializer.Serialize(new { Success = true}));
             }
             catch(Exception ex) {
-                _logger.LogError(ex, "Unable to craete schema");
+                _logger.LogError(ex, $"Unable to craete schema {ex.Message}");
                 context.Response.StatusCode = (int) HttpStatusCode.BadRequest;
             } 
         }

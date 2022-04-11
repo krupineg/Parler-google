@@ -32,18 +32,36 @@ namespace PushObject
     public class FunctionFlat : ICloudEventFunction<StorageObjectData>
     {
         private readonly ILogger<FunctionFlat> _logger;
+        private readonly HandlerFlat _handler;
+
+        public FunctionFlat(ILogger<FunctionFlat> logger, ILogger<HandlerFlat> handlerLogger) {
+            _logger = logger;
+            _handler = new HandlerFlat(handlerLogger, new ProjectIdProvider());
+        }
+
+        public Task HandleAsync(CloudEvent cloudEvent, StorageObjectData data, CancellationToken cancellationToken)
+        {
+            _logger.LogDebug($"Storage bucket: {data.Bucket}");
+            _logger.LogInformation($"Object being handled: {data.Name}");
+
+            return _handler.HandleAsync(data, cancellationToken);
+        }
+    }
+
+    public class HandlerFlat
+    {
+        private readonly ILogger<HandlerFlat> _logger;
         private readonly BigQueryClient _bigQueryClient;
         private readonly StorageClient _storageClient;
 
-        public FunctionFlat(ILogger<FunctionFlat> logger, IProjectIdProvider projectIdProvider) {
+        public HandlerFlat(ILogger<HandlerFlat> logger, IProjectIdProvider projectIdProvider) {
             _logger = logger;
-           
-             _logger.LogInformation($"Project id : {projectIdProvider.Id}");
+            _logger.LogInformation($"Project id : {projectIdProvider.Id}");
             _bigQueryClient = BigQueryClient.Create(projectIdProvider.Id);
             _storageClient = StorageClient.Create(GoogleCredential.GetApplicationDefault());
         }
 
-        public async Task HandleAsync(CloudEvent cloudEvent, StorageObjectData data, CancellationToken cancellationToken)
+        public async Task HandleAsync(StorageObjectData data, CancellationToken cancellationToken)
         {
             _logger.LogDebug($"Storage bucket: {data.Bucket}");
             _logger.LogInformation($"Object being handled: {data.Name}");   
@@ -101,7 +119,7 @@ namespace PushObject
                 .ToDictionary(prop => prop.Name, prop => prop.GetValue(someObject, null));
         }
     }
-
+    
     public interface IProjectIdProvider
     {
         string Id { get; }
@@ -110,14 +128,5 @@ namespace PushObject
     class ProjectIdProvider : IProjectIdProvider
     {
         public string Id =>  Environment.GetEnvironmentVariable("GCP_PROJECT"); //"parlr-342110"
-    }
-    
-    public class Startup : FunctionsStartup
-    {
-        // Provide implementations for IOperationSingleton, and IOperationScoped.
-        // The implementation is the same for both interfaces (the Operation class)
-        public override void ConfigureServices(WebHostBuilderContext context, IServiceCollection services) =>
-            services
-                .AddSingleton<IProjectIdProvider, ProjectIdProvider>();
     }
 }

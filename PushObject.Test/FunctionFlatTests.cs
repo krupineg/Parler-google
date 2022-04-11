@@ -1,29 +1,32 @@
 using System.Threading;
 using System.Threading.Tasks;
-using CloudNative.CloudEvents;
 using Google.Events.Protobuf.Cloud.Storage.V1;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using NUnit.Framework;
 
 namespace PushObject.Test;
+using System.Collections.Generic;
 
 public class FunctionFlatTests
 {
-    private FunctionFlat _sut;
+    private HandlerFlat _sut;
     
     [SetUp]
     public void Setup()
     {
+        var a = new List<int>();
+        string.Join(',', a);
         var idProvider = NSubstitute.Substitute.For<IProjectIdProvider>();
         idProvider.Id.Returns("parlr-342110");
-        _sut = new FunctionFlat(new Logger<FunctionFlat>(new LoggerFactory()), idProvider);
+        _sut = new HandlerFlat(new Logger<HandlerFlat>(new LoggerFactory()), idProvider);
     }
 
     [Test]
     public async Task Test1()
     {
-        await _sut.HandleAsync(new CloudEvent(),
-            new StorageObjectData() {Bucket = "parlr-raw-data", Name = "avoir.json"}, CancellationToken.None);
+        await _sut.HandleAsync(
+            new StorageObjectData() {Bucket = "parlr-raw-data", Name = "avoir.json"},
+            CancellationToken.None);
     }
 }

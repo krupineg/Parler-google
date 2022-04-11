@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30114.105
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PushObject", "PushObject\PushObject.csproj", "{1DD26AFD-8CE6-4FA8-BEDE-E8149FA1CAD3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CreateSchema", "CreateSchema\CreateSchema.csproj", "{61065930-572E-4E4E-97EE-B028631A96B3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PushObject.Test", "PushObject.Test\PushObject.Test.csproj", "{868DE4D8-BD44-4DDB-84D5-EF78F5E8B0B2}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1DD26AFD-8CE6-4FA8-BEDE-E8149FA1CAD3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1DD26AFD-8CE6-4FA8-BEDE-E8149FA1CAD3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1DD26AFD-8CE6-4FA8-BEDE-E8149FA1CAD3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1DD26AFD-8CE6-4FA8-BEDE-E8149FA1CAD3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{61065930-572E-4E4E-97EE-B028631A96B3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{61065930-572E-4E4E-97EE-B028631A96B3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{61065930-572E-4E4E-97EE-B028631A96B3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{61065930-572E-4E4E-97EE-B028631A96B3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{868DE4D8-BD44-4DDB-84D5-EF78F5E8B0B2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{868DE4D8-BD44-4DDB-84D5-EF78F5E8B0B2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{868DE4D8-BD44-4DDB-84D5-EF78F5E8B0B2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{868DE4D8-BD44-4DDB-84D5-EF78F5E8B0B2}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

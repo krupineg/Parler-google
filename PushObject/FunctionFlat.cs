@@ -32,57 +32,61 @@ namespace PushObject
         private readonly BigQueryClient _bigQueryClient;
         private readonly StorageClient _storageClient;
 
-        public FunctionFlat(ILogger<FunctionFlat> logger) {
+        public FunctionFlat(ILogger<FunctionFlat> logger, IProjectIdProvider projectIdProvider) {
             _logger = logger;
-            var projectId = System.Environment.GetEnvironmentVariable("GCP_PROJECT"); //"parlr-342110"
-             _logger.LogInformation($"Project id : {projectId}");
-            _bigQueryClient = BigQueryClient.Create(projectId);
+           
+             _logger.LogInformation($"Project id : {projectIdProvider.Id}");
+            _bigQueryClient = BigQueryClient.Create(projectIdProvider.Id);
             _storageClient = StorageClient.Create(GoogleCredential.GetApplicationDefault());
         }
 
         public async Task HandleAsync(CloudEvent cloudEvent, StorageObjectData data, CancellationToken cancellationToken)
         {
-            _logger.LogDebug($"CloudEvent type: {cloudEvent.Type}");
             _logger.LogDebug($"Storage bucket: {data.Bucket}");
             _logger.LogInformation($"Object being handled: {data.Name}");   
 
             var dataset = _bigQueryClient.GetOrCreateDataset("verbs_dataset");
             var table = dataset.GetTableReference("conjugation_flat");
-            var gcsUri = $"gs://parlr-raw-data/{data.Name}";
+            var count = await _bigQueryClient
+                .ExecuteQueryAsync($"SELECT DISTINCT Infinitive FROM `{table.DatasetId}.{table.TableId}`",
+                    ArraySegment<BigQueryParameter>.Empty,
+                    cancellationToken: cancellationToken).ConfigureAwait(false);
             using (var stream = new MemoryStream())
             {
                 await _storageClient.DownloadObjectAsync(data.Bucket, data.Name, stream, cancellationToken:cancellationToken);
+                stream.Seek(0, SeekOrigin.Begin);
                 using var reader = new StreamReader(stream);
-                using var jsonReader = new JsonTextReader(reader);
-                var serializer = new Newtonsoft.Json.JsonSerializer();
-                var verb = serializer.Deserialize<Verb>(jsonReader);
-                foreach (var timeConjugation in verb.TimeConjugations)
+                var str = reader.ReadToEnd();
+                var verb = Newtonsoft.Json.JsonConvert.DeserializeObject<Verb>(str);
+                var rows = Flatify(verb, (int)count.TotalRows.Value);
+                var loadJob = await _bigQueryClient.InsertRowsAsync(table, rows, cancellationToken: cancellationToken);
+                loadJob.ThrowOnAnyError();
+                _logger.LogInformation($"Object was handled successfully: {data.Name}");
+            }
+        }
+
+        IEnumerable<BigQueryInsertRow> Flatify(Verb verb, int verbIndex)
+        {
+            var conjugationIndex = 0;
+            foreach (var timeConjugation in verb.TimeConjugations)
+            {
+                foreach (var conjugation in timeConjugation.Conjugations)
                 {
-                    var conjugationIndex = 0;
-                    foreach (var conjugation in timeConjugation.Conjugations)
+
+                    var conjugationFlat = new ConjugationFlat()
                     {
-
-                        var conjugationFlat = new ConjugationFlat()
-                        {
-                            Id = $"{verb.Infinitive}.{timeConjugation.Time}.{conjugation.Value}",
-                            Infinitive = verb.Infinitive,
-                            Combined = conjugation.Combined,
-                            Female = conjugation.Female,
-                            Male = conjugation.Male,
-                            Party = conjugation.Party,
-                            Time = timeConjugation.Time,
-                            Value = conjugation.Value,
-                            ConjugationIndex = conjugationIndex++
-                        };
-
-                       var loadJob = await _bigQueryClient.InsertRowAsync(
-                           table,
-                           new BigQueryInsertRow() {ToDictionary(conjugationFlat)},
-                           cancellationToken: cancellationToken);
-                       loadJob.ThrowOnAnyError();
-                       
-                       _logger.LogInformation($"Object was handled successfully: {data.Name}");  
-                    }   
+                        Id = $"{verb.Infinitive}.{timeConjugation.Time}.{conjugation.Value}",
+                        Infinitive = verb.Infinitive,
+                        Combined = conjugation.Combined,
+                        Female = conjugation.Female,
+                        Male = conjugation.Male,
+                        Party = conjugation.Party,
+                        Time = timeConjugation.Time,
+                        Value = conjugation.Value,
+                        ConjugationIndex = conjugationIndex++,
+                        VerbIndex = verbIndex
+                    };
+                    yield return new BigQueryInsertRow() {ToDictionary(conjugationFlat)};
                 }
             }
         }
@@ -93,5 +97,15 @@ namespace PushObject
                 .GetProperties(BindingFlags.Instance | BindingFlags.Public)
                 .ToDictionary(prop => prop.Name, prop => prop.GetValue(someObject, null));
         }
+    }
+
+    public interface IProjectIdProvider
+    {
+        string Id { get; }
+    }
+
+    class ProjectIdProvider : IProjectIdProvider
+    {
+        public string Id =>  Environment.GetEnvironmentVariable("GCP_PROJECT"); //"parlr-342110"
     }
 }

@@ -13,6 +13,9 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Google.Apis.Auth.OAuth2;
+using Google.Cloud.Functions.Hosting;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using PushObject.Model;
 using PushObject.Model.V2;
@@ -107,5 +110,14 @@ namespace PushObject
     class ProjectIdProvider : IProjectIdProvider
     {
         public string Id =>  Environment.GetEnvironmentVariable("GCP_PROJECT"); //"parlr-342110"
+    }
+    
+    public class Startup : FunctionsStartup
+    {
+        // Provide implementations for IOperationSingleton, and IOperationScoped.
+        // The implementation is the same for both interfaces (the Operation class)
+        public override void ConfigureServices(WebHostBuilderContext context, IServiceCollection services) =>
+            services
+                .AddSingleton<IProjectIdProvider, ProjectIdProvider>();
     }
 }

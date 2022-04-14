@@ -65,13 +65,20 @@ namespace PushObject
         {
             _logger.LogDebug($"Storage bucket: {data.Bucket}");
             _logger.LogInformation($"Object being handled: {data.Name}");   
-
+            
+            
             var dataset = _bigQueryClient.GetOrCreateDataset("verbs_dataset");
-            var table = dataset.GetTableReference("conjugation_flat");
-            var count = await _bigQueryClient
-                .ExecuteQueryAsync($"SELECT DISTINCT Infinitive FROM `{table.DatasetId}.{table.TableId}`",
+
+            var infinitives = dataset.GetTableReference("infinitives");
+            var result = await _bigQueryClient.InsertRowAsync(infinitives,
+                new BigQueryInsertRow() {new Dictionary<string, object>() {{"Infinitive", data.Name}}});
+            var index = await _bigQueryClient
+                .ExecuteQueryAsync($"SELECT row_number() over() FROM `{infinitives.DatasetId}.{infinitives.TableId}` where Infinitive = {data.Name}",
                     ArraySegment<BigQueryParameter>.Empty,
                     cancellationToken: cancellationToken).ConfigureAwait(false);
+            var indexNumber = Int32.Parse(index.Single().RawRow.F.Single().V.ToString()) - 1;
+            var table = dataset.GetTableReference("conjugation_flat");
+           
             using (var stream = new MemoryStream())
             {
                 await _storageClient.DownloadObjectAsync(data.Bucket, data.Name, stream, cancellationToken:cancellationToken);
@@ -79,7 +86,7 @@ namespace PushObject
                 using var reader = new StreamReader(stream);
                 var str = reader.ReadToEnd();
                 var verb = Newtonsoft.Json.JsonConvert.DeserializeObject<Verb>(str);
-                var rows = Flatify(verb, (int)count.TotalRows.Value);
+                var rows = Flatify(verb, indexNumber);
                 var loadJob = await _bigQueryClient.InsertRowsAsync(table, rows, cancellationToken: cancellationToken);
                 loadJob.ThrowOnAnyError();
                 _logger.LogInformation($"Object was handled successfully: {data.Name}");

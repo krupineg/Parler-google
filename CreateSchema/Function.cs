@@ -73,18 +73,30 @@ namespace CreateSchema
                 _logger.LogInformation($"Creating schema");
                 var dataset = _client.GetOrCreateDataset("verbs_dataset");
                 
-                _logger.LogDebug($"Drop existing infinitive table if exists");
-                //await _client.DeleteTableAsync("verbs_dataset", "verbs_table").ConfigureAwait(false);   
-                await _client.DeleteTableAsync("verbs_dataset", "infinitives").ConfigureAwait(false);   
+                try
+                {
+                    _logger.LogDebug($"Drop existing infinitives table if exists");
+                    await _client.DeleteTableAsync("verbs_dataset", "infinitives").ConfigureAwait(false);   
 
-                _logger.LogDebug($"Drop existing conjugation table if exists");
-                //await _client.DeleteTableAsync("verbs_dataset", "verbs_table").ConfigureAwait(false);   
-                await _client.DeleteTableAsync("verbs_dataset", "conjugation_flat").ConfigureAwait(false);   
-
-                 _logger.LogDebug($"Creating table verbs_table (ignored)");
-                // await dataset.CreateTableAsync("verbs_table", _schemaVerbs).ConfigureAwait(false);   
-            
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, "unable to drop infinitives table");
+                }
                 
+                try
+                {
+                    _logger.LogDebug($"Drop existing conjugation_flat table if exists"); 
+                    await _client.DeleteTableAsync("verbs_dataset", "conjugation_flat").ConfigureAwait(false);
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, "unable to drop conjugation_flat table");
+                }
+
+                _logger.LogDebug($"Creating table verbs_table (ignored)");
+                // await dataset.CreateTableAsync("verbs_table", _schemaVerbs).ConfigureAwait(false);   
+
                 _logger.LogDebug($"Creating table infinitives");
                 await dataset.CreateTableAsync("infinitives", _infinitives).ConfigureAwait(false); 
                 

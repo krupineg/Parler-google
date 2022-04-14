@@ -17,6 +17,7 @@ namespace CreateSchema
         private readonly ILogger<Function> _logger;
         private readonly BigQueryClient _client;
         private readonly TableSchema _schemaConjugations;
+        private readonly TableSchema _infinitives;
 
         public Function(ILogger<Function> logger) {
             _logger = logger;
@@ -24,6 +25,10 @@ namespace CreateSchema
             _logger.LogInformation(projectId);
             _client = Google.Cloud.BigQuery.V2.BigQueryClient.Create(projectId);
              _logger.LogDebug($"Prepare schema");
+             _infinitives = new TableSchemaBuilder()
+             {
+                 new TableFieldSchema() {Name = "Infinitive", Type = "STRING"}
+             }.Build();
             _schemaVerbs = new TableSchemaBuilder 
             {
                 new TableFieldSchema() { Name = "Infinitive", Type="STRING"},
@@ -77,6 +82,9 @@ namespace CreateSchema
                  _logger.LogDebug($"Creating table verbs_table (ignored)");
                 // await dataset.CreateTableAsync("verbs_table", _schemaVerbs).ConfigureAwait(false);   
             
+                
+                _logger.LogDebug($"Creating table infinitives");
+                await dataset.CreateTableAsync("infinitives", _infinitives).ConfigureAwait(false); 
                 
                 _logger.LogDebug($"Creating table conjugation_flat");
                 await dataset.CreateTableAsync("conjugation_flat", _schemaConjugations).ConfigureAwait(false);   

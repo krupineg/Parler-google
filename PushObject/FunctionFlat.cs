@@ -73,7 +73,7 @@ namespace PushObject
             var result = await _bigQueryClient.InsertRowAsync(infinitives,
                 new BigQueryInsertRow() {new Dictionary<string, object>() {{"Infinitive", data.Name}}});
             var index = await _bigQueryClient
-                .ExecuteQueryAsync($"SELECT row_number() over() FROM `{infinitives.DatasetId}.{infinitives.TableId}` where Infinitive = {data.Name}",
+                .ExecuteQueryAsync($"SELECT row_number() over() FROM `{infinitives.DatasetId}.{infinitives.TableId}` where Infinitive = '{data.Name}'",
                     ArraySegment<BigQueryParameter>.Empty,
                     cancellationToken: cancellationToken).ConfigureAwait(false);
             var indexNumber = Int32.Parse(index.Single().RawRow.F.Single().V.ToString()) - 1;

@@ -5,3 +5,5 @@ gcloud functions deploy CreateSchema \
 --runtime=dotnet3 \
 --set-env-vars GCP_PROJECT=parlr-342110 \
 --allow-unauthenticated;
+
+curl https://us-central1-parlr-342110.cloudfunctions.net/CreateSchema

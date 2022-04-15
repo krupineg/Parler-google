@@ -4,6 +4,7 @@ using Google.Events.Protobuf.Cloud.Storage.V1;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using NUnit.Framework;
+using PushObject.Flat;
 
 namespace PushObject.Test;
 using System.Collections.Generic;
@@ -27,6 +28,7 @@ public class FunctionFlatTests
     {
         await _sut.HandleAsync(
             new StorageObjectData() {Bucket = "parlr-raw-data", Name = "avoir.json"},
+            1,
             CancellationToken.None);
     }
 }

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Google.Cloud.PubSub.V1;
 using Google.Events.Protobuf.Cloud.PubSub.V1;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 
 namespace CounterPubSub
 {
@@ -35,6 +36,9 @@ namespace CounterPubSub
         /// <returns>A task representing the asynchronous operation.</returns>
         public async Task HandleAsync(CloudEvent cloudEvent, MessagePublishedData data, CancellationToken cancellationToken)
         {
+            _logger.LogInformation($"executing function for {JsonConvert.SerializeObject(cloudEvent)}");
+            _logger.LogInformation($"message {JsonConvert.SerializeObject(data)}");
+            
             if (data.Message.Attributes.ContainsKey("reset"))
             {
                 var value = long.TryParse(data.Message.Attributes["reset"], out long val) ? val : 0L;

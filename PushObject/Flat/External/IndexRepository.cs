@@ -27,7 +27,7 @@ namespace PushObject.Flat.External
 
         public async Task<long> ObtainIndex()
         {
-            var poll = Poll();
+            var poll = Poll().ConfigureAwait(false);
             await Publish();
             var result = await poll;
             return result.Single();
@@ -36,6 +36,7 @@ namespace PushObject.Flat.External
         private async Task Publish()
         {
             var origin = Guid.NewGuid();
+            _requests.Add(origin);
             _logger.LogInformation($"preparing index request with origin: {origin}");
             TopicName topicName = TopicName.FromProjectTopic(_projectIdProvider.Id, RequestTopic);
             var publisher = await PublisherClient.CreateAsync(topicName);
@@ -46,42 +47,55 @@ namespace PushObject.Flat.External
                 Attributes = {{"origin", origin.ToString()}}
             });
             _logger.LogInformation($"message sent with id: {message}");
-            _requests.Add(origin);
         }
 
-        private async Task<List<long>> Poll()
+        private Task<List<long>> Poll()
         {
-            var subscriptionName =
-                SubscriptionName.FromProjectSubscription(_projectIdProvider.Id, ResponseTopicSubscription);
-            var subscriber = await SubscriberClient.CreateAsync(subscriptionName);
-            // SubscriberClient runs your message handle function on multiple
-            // threads to maximize throughput.
-            
-            var result = new List<long>();
-            var mre = new ManualResetEventSlim(false);
-            var startTask = subscriber.StartAsync((PubsubMessage message, CancellationToken cancel) =>
+            return Task.Run(async () =>
             {
-                if (_requests.Contains(Guid.Parse(message.Attributes["origin"])))
-                {
-                    try
-                    {
-                        result.Add(long.Parse(message.Attributes["value"]));
-                        return Task.FromResult(SubscriberClient.Reply.Ack);
-                    }
-                    finally
-                    {
-                        mre.Set();
-                    }
-                }
+                _logger.LogInformation($"prepare poll");
+                var subscriptionName =
+                    SubscriptionName.FromProjectSubscription(_projectIdProvider.Id, ResponseTopicSubscription);
 
-                return Task.FromResult(SubscriberClient.Reply.Nack);
+                _logger.LogInformation($"created subscription {_projectIdProvider.Id} {ResponseTopicSubscription}");
+                var subscriber = await SubscriberClient.CreateAsync(subscriptionName);
+
+                _logger.LogInformation($"created subscriber {subscriber.SubscriptionName}");
+                // SubscriberClient runs your message handle function on multiple
+                // threads to maximize throughput.
+
+                var result = new List<long>();
+                var mre = new ManualResetEvent(false);
+                var startTask = subscriber.StartAsync((PubsubMessage message, CancellationToken cancel) =>
+                {
+                    _logger.LogInformation(
+                        $"received message {message.MessageId} {string.Join(",", message.Attributes.Select(x => $"{x.Key} : {x.Value}"))}");
+                    if (_requests.Contains(Guid.Parse(message.Attributes["origin"])))
+                    {
+                        _logger.LogInformation($"origin is correct");
+                        try
+                        {
+                            result.Add(long.Parse(message.Attributes["value"]));
+                            return Task.FromResult(SubscriberClient.Reply.Ack);
+                        }
+                        finally
+                        {
+                            mre.Set();
+                        }
+                    }
+
+                    _logger.LogInformation($"origin is different");
+                    return Task.FromResult(SubscriberClient.Reply.Nack);
+                }).ConfigureAwait(false);
+
+                _logger.LogInformation($"started task");
+                mre.WaitOne(TimeSpan.FromSeconds(WaitingTimeoutSeconds));
+                await subscriber.StopAsync(CancellationToken.None);
+
+                await startTask;
+                return result;
             });
-            // Run for 5 seconds.
-            mre.Wait(TimeSpan.FromSeconds(WaitingTimeoutSeconds));
-            await subscriber.StopAsync(CancellationToken.None);
-            // Lets make sure that the start task finished successfully after the call to stop.
-            await startTask;
-            return result;
+
         }
 
     }

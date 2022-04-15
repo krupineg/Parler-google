@@ -15,9 +15,11 @@ namespace PushObject.Flat.External
         private readonly ILogger<IndexRepository> _logger;
         private readonly IProjectIdProvider _projectIdProvider;
         private readonly HashSet<Guid> _requests;
+        private readonly int WaitingTimeoutSeconds;
 
         public IndexRepository(IProjectIdProvider projectIdProvider, ILogger<IndexRepository> logger)
         {
+            WaitingTimeoutSeconds = int.Parse(Environment.GetEnvironmentVariable("INDEX_RESPONSE_TIMEOUT_SECONDS") ?? "300");
             _projectIdProvider = projectIdProvider;
             _logger = logger;
             _requests = new HashSet<Guid>();
@@ -34,13 +36,16 @@ namespace PushObject.Flat.External
         private async Task Publish()
         {
             var origin = Guid.NewGuid();
+            _logger.LogInformation($"preparing index request with origin: {origin}");
             TopicName topicName = TopicName.FromProjectTopic(_projectIdProvider.Id, RequestTopic);
             var publisher = await PublisherClient.CreateAsync(topicName);
+            
+            _logger.LogInformation($"publisher created for topic: {topicName.TopicId}");
             string message = await publisher.PublishAsync(new PubsubMessage()
             {
                 Attributes = {{"origin", origin.ToString()}}
             });
-            _logger.LogInformation($"received response: {message}");
+            _logger.LogInformation($"message sent with id: {message}");
             _requests.Add(origin);
         }
 
@@ -51,7 +56,7 @@ namespace PushObject.Flat.External
             var subscriber = await SubscriberClient.CreateAsync(subscriptionName);
             // SubscriberClient runs your message handle function on multiple
             // threads to maximize throughput.
-
+            
             var result = new List<long>();
             var mre = new ManualResetEventSlim(false);
             var startTask = subscriber.StartAsync((PubsubMessage message, CancellationToken cancel) =>
@@ -72,11 +77,12 @@ namespace PushObject.Flat.External
                 return Task.FromResult(SubscriberClient.Reply.Nack);
             });
             // Run for 5 seconds.
-            mre.Wait(TimeSpan.FromSeconds(10));
+            mre.Wait(TimeSpan.FromSeconds(WaitingTimeoutSeconds));
             await subscriber.StopAsync(CancellationToken.None);
             // Lets make sure that the start task finished successfully after the call to stop.
             await startTask;
             return result;
         }
+
     }
 }

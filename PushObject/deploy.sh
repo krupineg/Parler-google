@@ -14,6 +14,4 @@ gcloud functions deploy PushObjectFlat \
 --trigger-resource=parlr-raw-data-flat \
 --entry-point PushObject.FunctionFlat \
 --runtime=dotnet3 \
---set-env-vars GCP_PROJECT=parlr-342110 \
---retry \
---allow-unauthenticated;
+--set-env-vars GCP_PROJECT=parlr-342110,INDEX_RESPONSE_TIMEOUT_SECONDS=300;

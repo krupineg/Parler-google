@@ -1,0 +1,1 @@
+gcloud functions logs read PushObjectFlat

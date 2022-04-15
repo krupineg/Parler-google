@@ -1,0 +1,1 @@
+gcloud functions call publish --data '{"topic":"parlr-increment", "attributes": { "origin":"111" }}'

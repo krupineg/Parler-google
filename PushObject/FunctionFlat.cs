@@ -1,3 +1,4 @@
+using System;
 using CloudNative.CloudEvents;
 using Google.Cloud.Functions.Framework;
 using Google.Events.Protobuf.Cloud.Storage.V1;
@@ -39,10 +40,18 @@ namespace PushObject
 
         public async Task HandleAsync(CloudEvent cloudEvent, StorageObjectData data, CancellationToken cancellationToken)
         {
-            _logger.LogDebug($"Storage bucket: {data.Bucket}");
-            _logger.LogInformation($"Object being handled: {data.Name}");
-            var index = await _indexRepository.ObtainIndex();
-            await _handler.HandleAsync(data, index, cancellationToken);
+            try
+            {
+                _logger.LogDebug($"Storage bucket: {data.Bucket}");
+                _logger.LogInformation($"Object being handled: {data.Name}");
+                var index = await _indexRepository.ObtainIndex();
+                await _handler.HandleAsync(data, index, cancellationToken);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "this function was interrupted by an error");
+                throw;
+            }
         }
     }
 }

@@ -49,7 +49,7 @@ namespace PushObject
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "this function was interrupted by an error");
+                _logger.LogError(e, $"this function was interrupted by an error: {e.Message} {e.InnerException?.Message}");
                 throw;
             }
         }

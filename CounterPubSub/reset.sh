@@ -1,1 +1,1 @@
-gcloud functions call publish --data '{"topic":"parlr-increment", "attributes": { "reset":"0" }}'
+gcloud functions call CounterPubSub --data '{"topic":"parlr-increment", "attributes": { "reset":"0" }}'

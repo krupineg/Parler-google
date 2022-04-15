@@ -1,5 +1,5 @@
 gcloud functions deploy CounterPubSub \
---source https://source.developers.google.com/projects/parlr-342110/repos/github_krupineg_parler-google/moveable-aliases/master/paths/CreateSchema \
+--source https://source.developers.google.com/projects/parlr-342110/repos/github_krupineg_parler-google/moveable-aliases/master/paths/CounterPubSub \
 --trigger-topic parlr-increment \
 --entry-point CounterPubSub.Function \
 --runtime=dotnet3 \

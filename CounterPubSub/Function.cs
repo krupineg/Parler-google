@@ -19,6 +19,11 @@ namespace CounterPubSub
     public class Function : ICloudEventFunction<MessagePublishedData>
     {
         private static long _counter;
+        private readonly ILogger _logger;
+
+        public Function(ILogger<Function> logger) {
+            _logger = logger;
+        }
         
         /// <summary>
         /// Logic for your function goes here. Note that a CloudEvent function just consumes an event;
@@ -33,17 +38,17 @@ namespace CounterPubSub
             if (data.Message.Attributes.ContainsKey("reset"))
             {
                 var value = long.TryParse(data.Message.Attributes["reset"], out long val) ? val : 0L;
-                //_logger.LogInformation($"try to reset the counter to {value}");
+                _logger.LogInformation($"try to reset the counter to {value}");
                 while (Interlocked.Exchange(ref _counter, value) != value)
                 {
-                //    _logger.LogInformation("failed to reset the counter");
+                    _logger.LogInformation("failed to reset the counter");
                 }
-               // _logger.LogInformation($"counter was reset to {value}");
+                _logger.LogInformation($"counter was reset to {value}");
             }
             else
             {
                 var projectId = Environment.GetEnvironmentVariable("GCP_PROJECT");
-             //   _logger.LogInformation("increment the counter");
+                _logger.LogInformation("increment the counter");
                 var value = Interlocked.Increment(ref _counter);
                 var origin = data.Message.Attributes["origin"];
                 var topicName = TopicName.FromProjectTopic(projectId, "parlr-increment-response");
@@ -55,7 +60,7 @@ namespace CounterPubSub
                 await publisher.PublishAsync(message);
                 await publisher.ShutdownAsync(cancellationToken);
                 
-               // _logger.LogInformation($"response is sent back to the origin: {origin}, {value}");
+                _logger.LogInformation($"response is sent back to the origin: {origin}, {value}");
             }
         }
     }

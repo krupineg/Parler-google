@@ -44,8 +44,8 @@ namespace PushObject
             {
                 _logger.LogDebug($"Storage bucket: {data.Bucket}");
                 _logger.LogInformation($"Object being handled: {data.Name}");
-                var index = await _indexRepository.ObtainIndex();
-                await _handler.HandleAsync(data, index, cancellationToken);
+                var index = await _indexRepository.ObtainIndex().ConfigureAwait(false);
+                await _handler.HandleAsync(data, index, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception e)
             {

@@ -36,9 +36,6 @@ namespace CounterPubSub
         /// <returns>A task representing the asynchronous operation.</returns>
         public async Task HandleAsync(CloudEvent cloudEvent, MessagePublishedData data, CancellationToken cancellationToken)
         {
-            _logger.LogInformation($"executing function for {JsonConvert.SerializeObject(cloudEvent)}");
-            _logger.LogInformation($"message {JsonConvert.SerializeObject(data)}");
-            
             if (data.Message.Attributes.ContainsKey("reset"))
             {
                 var value = long.TryParse(data.Message.Attributes["reset"], out long val) ? val : 0L;
@@ -53,10 +50,12 @@ namespace CounterPubSub
             {
                 var projectId = Environment.GetEnvironmentVariable("GCP_PROJECT");
                 _logger.LogInformation("increment the counter");
-                var value = Interlocked.Increment(ref _counter);
                 var origin = data.Message.Attributes["origin"];
                 var topicName = TopicName.FromProjectTopic(projectId, "parlr-increment-response");
                 var publisher = await PublisherClient.CreateAsync(topicName);
+                
+                var value = Interlocked.Increment(ref _counter);
+                
                 var message = new Google.Cloud.PubSub.V1.PubsubMessage()
                 {
                     Attributes = {{"origin", origin}, {"value", value.ToString()}}

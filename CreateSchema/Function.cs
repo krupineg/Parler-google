@@ -27,7 +27,8 @@ namespace CreateSchema
              _logger.LogDebug($"Prepare schema");
              _infinitives = new TableSchemaBuilder()
              {
-                 new TableFieldSchema() {Name = "Infinitive", Type = "STRING"}
+                 new TableFieldSchema() {Name = "Infinitive", Type = "STRING"},
+                 new TableFieldSchema() {Name = "Index", Type = "INTEGER"}
              }.Build();
             _schemaVerbs = new TableSchemaBuilder 
             {

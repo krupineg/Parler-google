@@ -29,18 +29,17 @@ namespace PushObject.Flat
             _storageClient = StorageClient.Create(GoogleCredential.GetApplicationDefault());
         }
 
-        public async Task HandleAsync(StorageObjectData data, long verbIndex, CancellationToken cancellationToken)
+        public async Task HandleAsync(string bucket, string name, long verbIndex, CancellationToken cancellationToken)
         {
-            _logger.LogDebug($"Storage bucket: {data.Bucket}");
-            _logger.LogInformation($"Object being handled: {data.Name}");
+            _logger.LogDebug($"Storage bucket: {bucket}");
+            _logger.LogInformation($"Object being handled: {name}");
 
             var dataset = _bigQueryClient.GetOrCreateDataset("verbs_dataset");
-
             var table = dataset.GetTableReference("conjugation_flat");
 
             await using (var stream = new MemoryStream())
             {
-                await _storageClient.DownloadObjectAsync(data.Bucket, data.Name, stream,
+                await _storageClient.DownloadObjectAsync(bucket, name, stream,
                     cancellationToken: cancellationToken);
                 stream.Seek(0, SeekOrigin.Begin);
                 using var reader = new StreamReader(stream);
@@ -49,7 +48,7 @@ namespace PushObject.Flat
                 var rows = Flatify(verb, verbIndex);
                 var loadJob = await _bigQueryClient.InsertRowsAsync(table, rows, cancellationToken: cancellationToken);
                 loadJob.ThrowOnAnyError();
-                _logger.LogInformation($"Object was handled successfully: {data.Name}");
+                _logger.LogInformation($"Object was handled successfully: {name}");
             }
         }
 

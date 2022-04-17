@@ -4,9 +4,8 @@ using Google.Cloud.Functions.Framework;
 using System.Threading;
 using System.Threading.Tasks;
 using Google.Cloud.PubSub.V1;
-using Google.Events.Protobuf.Cloud.PubSub.V1;
+using Google.Events.Protobuf.Cloud.Storage.V1;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 namespace CounterPubSub
 {
@@ -17,9 +16,9 @@ namespace CounterPubSub
     /// deploying a function expecting a StorageObject payload will not work for a trigger that provides
     /// a FirestoreEvent.)
     /// </summary>
-    public class Function : ICloudEventFunction<MessagePublishedData>
+    public class Function :ICloudEventFunction<StorageObjectData>
     {
-        private static long _counter;
+        private static long _counter = -1;
         private readonly ILogger _logger;
 
         public Function(ILogger<Function> logger) {
@@ -34,37 +33,23 @@ namespace CounterPubSub
         /// <param name="data">The deserialized data within the CloudEvent.</param>
         /// <param name="cancellationToken">A cancellation token that is notified if the request is aborted.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
-        public async Task HandleAsync(CloudEvent cloudEvent, MessagePublishedData data, CancellationToken cancellationToken)
+        public async Task HandleAsync(CloudEvent cloudEvent, StorageObjectData data, CancellationToken cancellationToken)
         {
-            if (data.Message.Attributes.ContainsKey("reset"))
+            var projectId = Environment.GetEnvironmentVariable("GCP_PROJECT");
+            _logger.LogInformation("increment the counter");
+            var bucket = data.Bucket;
+            var objectName = data.Name;
+            var topicName = TopicName.FromProjectTopic(projectId, "parlr-increment");
+            var value = Interlocked.Increment(ref _counter);
+            var publisher = await PublisherClient.CreateAsync(topicName).ConfigureAwait(false);
+            var message = new PubsubMessage()
             {
-                var value = long.TryParse(data.Message.Attributes["reset"], out long val) ? val : 0L;
-                _logger.LogInformation($"try to reset the counter to {value}");
-                while (Interlocked.Exchange(ref _counter, value) != value)
-                {
-                    _logger.LogInformation("failed to reset the counter");
-                }
-                _logger.LogInformation($"counter was reset to {value}");
-            }
-            else
-            {
-                var projectId = Environment.GetEnvironmentVariable("GCP_PROJECT");
-                _logger.LogInformation("increment the counter");
-                var origin = data.Message.Attributes["origin"];
-                var topicName = TopicName.FromProjectTopic(projectId, "parlr-increment-response");
-                var publisher = await PublisherClient.CreateAsync(topicName);
+                Attributes = {{"data.Bucket", bucket}, {"data.Name", objectName}, { "data.Index", value.ToString()}}
+            };
+            await publisher.PublishAsync(message).ConfigureAwait(false);
+            await publisher.ShutdownAsync(cancellationToken).ConfigureAwait(false);
                 
-                var value = Interlocked.Increment(ref _counter);
-                
-                var message = new Google.Cloud.PubSub.V1.PubsubMessage()
-                {
-                    Attributes = {{"origin", origin}, {"value", value.ToString()}}
-                };
-                await publisher.PublishAsync(message);
-                await publisher.ShutdownAsync(cancellationToken);
-                
-                _logger.LogInformation($"response is sent back to the origin: {origin}, {value}");
-            }
+            _logger.LogInformation($"response is sent: {bucket}/{objectName}, index: {value}");
         }
     }
 }

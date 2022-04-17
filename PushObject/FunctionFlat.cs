@@ -1,12 +1,11 @@
 using System;
 using CloudNative.CloudEvents;
 using Google.Cloud.Functions.Framework;
-using Google.Events.Protobuf.Cloud.Storage.V1;
 using Microsoft.Extensions.Logging;
 using System.Threading;
 using System.Threading.Tasks;
+using Google.Events.Protobuf.Cloud.PubSub.V1;
 using PushObject.Flat;
-using PushObject.Flat.External;
 using PushObject.Flat.Local;
 
 namespace PushObject
@@ -18,29 +17,28 @@ namespace PushObject
     /// deploying a function expecting a StorageObject payload will not work for a trigger that provides
     /// a FirestoreEvent.)
     /// </summary>
-    internal class FunctionFlat : ICloudEventFunction<StorageObjectData>
+    internal class FunctionFlat : ICloudEventFunction<MessagePublishedData>
     {
         private readonly ILogger<FunctionFlat> _logger;
-        private readonly IIndexRepository _indexRepository;
         private readonly HandlerFlat _handler;
 
         public FunctionFlat(
             ILogger<FunctionFlat> logger, 
-            ILogger<HandlerFlat> handlerLogger, 
-            ILogger<IndexRepository> repositoryLogger) {
+            ILogger<HandlerFlat> handlerLogger) {
             _logger = logger;
-            _indexRepository = new IndexRepository(new ProjectIdProvider(), repositoryLogger);
             _handler = new HandlerFlat(handlerLogger, new ProjectIdProvider());
         }
 
-        public async Task HandleAsync(CloudEvent cloudEvent, StorageObjectData data, CancellationToken cancellationToken)
+        public async Task HandleAsync(CloudEvent cloudEvent, MessagePublishedData message, CancellationToken cancellationToken)
         {
             try
             {
-                _logger.LogDebug($"Storage bucket: {data.Bucket}");
-                _logger.LogInformation($"Object being handled: {data.Name}");
-                var index = await _indexRepository.ObtainIndex().ConfigureAwait(false);
-                await _handler.HandleAsync(data, index, cancellationToken).ConfigureAwait(false);
+                var bucket = message.Message.Attributes["data.Bucket"];
+                var objectName = message.Message.Attributes["data.Name"];
+                var index = int.Parse(message.Message.Attributes["data.Index"]);
+                _logger.LogDebug($"Storage bucket: {bucket}");
+                _logger.LogInformation($"Object being handled: {bucket} {objectName} {index}");
+                await _handler.HandleAsync(bucket, objectName, index, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception e)
             {

@@ -27,7 +27,8 @@ public class FunctionFlatTests
     public async Task Test1()
     {
         await _sut.HandleAsync(
-            new StorageObjectData() {Bucket = "parlr-raw-data", Name = "avoir.json"},
+            "parlr-raw-data",
+        "avoir.json",
             1,
             CancellationToken.None);
     }

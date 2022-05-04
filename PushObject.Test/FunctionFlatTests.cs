@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using NSubstitute;
 using NUnit.Framework;
 using PushObject.Flat;
+using PushObject.Model;
 
 namespace PushObject.Test;
 using System.Collections.Generic;
@@ -12,15 +13,15 @@ using System.Collections.Generic;
 public class FunctionFlatTests
 {
     private HandlerFlat _sut;
-    
+    private IPusher _pusher;
+
     [SetUp]
     public void Setup()
     {
         var a = new List<int>();
         string.Join(',', a);
-        var idProvider = NSubstitute.Substitute.For<IProjectIdProvider>();
-        idProvider.Id.Returns("parlr-342110");
-        _sut = new HandlerFlat(new Logger<HandlerFlat>(new LoggerFactory()), idProvider);
+        _pusher = Substitute.For<IPusher>();
+        _sut = new HandlerFlat(new Logger<HandlerFlat>(new LoggerFactory()), _pusher);
     }
 
     [Test]
@@ -31,5 +32,6 @@ public class FunctionFlatTests
         "avoir.json",
             1,
             CancellationToken.None);
+        await _pusher.Received(1).PushAsync(Arg.Any<Verb>(), Arg.Any<long>(), Arg.Any<CancellationToken>());
     }
 }

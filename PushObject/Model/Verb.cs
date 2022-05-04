@@ -9,7 +9,10 @@ namespace PushObject.Model
     [FirestoreData]
     public class Verb
     {
+        [FirestoreProperty]
         public string Infinitive { get; set; }
+        
+        [FirestoreProperty]
         public ICollection<TimeConjugation> TimeConjugations { get; set; }
         public override string ToString()
         {

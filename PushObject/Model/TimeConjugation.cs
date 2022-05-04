@@ -8,7 +8,9 @@ namespace PushObject.Model
     [DebuggerDisplay("[TimeConjugation] time: {Time}")]
     public sealed class TimeConjugation
     {
+        [FirestoreProperty]
         public string Time { get; set; }
+        [FirestoreProperty]
         public ICollection<Conjugation> Conjugations { get; set; }
     }
 }

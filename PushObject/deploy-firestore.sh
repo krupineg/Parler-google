@@ -1,6 +1,6 @@
 gcloud functions delete PushObjectFlat;
 
-gcloud functions deploy PushObjectFirestore \
+gcloud functions deploy PushObjectToFirestore \
 --source https://source.developers.google.com/projects/parlr-342110/repos/github_krupineg_parler-google/moveable-aliases/master/paths/PushObject \
 --trigger-topic parlr-increment \
 --entry-point PushObject.FunctionFirestore \

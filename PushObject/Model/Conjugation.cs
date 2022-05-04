@@ -1,8 +1,9 @@
 ﻿using System.Diagnostics;
+using Google.Cloud.Firestore;
 
 namespace PushObject.Model
 {
-
+    [FirestoreData]
     [DebuggerDisplay("[Conjugation] pronoun: {Male}/{Female}/{Combined}, party: {Party} value: {Value}")]
     public class Conjugation
     {

@@ -28,11 +28,13 @@ namespace CreateSchema
              _infinitives = new TableSchemaBuilder()
              {
                  new TableFieldSchema() {Name = "Infinitive", Type = "STRING"},
-                 new TableFieldSchema() {Name = "Index", Type = "INTEGER"}
+                 new TableFieldSchema() {Name = "Index", Type = "INTEGER"},
+                 new TableFieldSchema() { Name = "Group", Type="INTEGER"}
              }.Build();
             _schemaVerbs = new TableSchemaBuilder 
             {
                 new TableFieldSchema() { Name = "Infinitive", Type="STRING"},
+                new TableFieldSchema() { Name = "Group", Type="INTEGER"},
                 new TableFieldSchema() { Name = "Id", Type="STRING"},
                 new TableFieldSchema() {  Name="TimeConjugations", Type="STRUCT", Mode = "REPEATED", Fields = new List<TableFieldSchema> {
                         new TableFieldSchema() { Name = "Id", Type="STRING"},
@@ -51,6 +53,7 @@ namespace CreateSchema
             _schemaConjugations = new TableSchemaBuilder 
             {
                 new TableFieldSchema() { Name = "Infinitive", Type="STRING"},
+                new TableFieldSchema() { Name = "Group", Type="INTEGER"},
                 new TableFieldSchema() { Name = "Id", Type="STRING"},
                 new TableFieldSchema() { Name = "VerbIndex", Type="INTEGER"},
                 new TableFieldSchema() { Name = "ConjugationIndex", Type="INTEGER"},
@@ -96,7 +99,7 @@ namespace CreateSchema
                 }
 
                 _logger.LogDebug($"Creating table verbs_table (ignored)");
-                // await dataset.CreateTableAsync("verbs_table", _schemaVerbs).ConfigureAwait(false);   
+                 await dataset.CreateTableAsync("verbs_table", _schemaVerbs).ConfigureAwait(false);   
 
                 _logger.LogDebug($"Creating table infinitives");
                 await dataset.CreateTableAsync("infinitives", _infinitives).ConfigureAwait(false); 

@@ -45,7 +45,7 @@ namespace PushObject
 
             var dataset = _client.GetOrCreateDataset("verbs_dataset");
             var table = dataset.GetTableReference("verbs_table");
-            var gcsUri = $"gs://parlr-raw-data/{data.Name}";    
+            var gcsUri = $"gs://parlr-raw-data-groups/{data.Name}";    
             var loadJob = await _client.CreateLoadJobAsync(gcsUri, table, null, _jobOptions).ConfigureAwait(false);
             loadJob.PollUntilCompleted();
             loadJob.ThrowOnAnyError();

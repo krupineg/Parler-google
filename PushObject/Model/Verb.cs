@@ -13,6 +13,9 @@ namespace PushObject.Model
         public string Infinitive { get; set; }
         
         [FirestoreProperty]
+        public int Group { get; set; }
+        
+        [FirestoreProperty]
         public ICollection<TimeConjugation> TimeConjugations { get; set; }
         public override string ToString()
         {
